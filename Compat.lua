@@ -134,6 +134,11 @@ if not GetServerTime then
 	GetServerTime = function() return time() end
 end
 
+-- `nop` (a do-nothing function) does not exist on 3.3.5a; Options.lua uses it.
+if not nop then
+	function nop() end
+end
+
 -- Group roster helpers were added in 5.0 (Mists). Map them to the 3.3.5a API.
 if not GetNumGroupMembers then
 	function GetNumGroupMembers()
