@@ -1229,7 +1229,9 @@ local AceGUI = LibStub("AceGUI-3.0")
 -- Export
 local export = AceGUI:Create("Frame")
 export:SetWidth(550)
-export:EnableResize(false)
+-- EnableResize is only on the newer AceGUI "Window"/"Frame" widget; the 3.3.5a
+-- AceGUI "Frame" has no such method, so guard the call to stay portable.
+if export.EnableResize then export:EnableResize(false) end
 export:SetStatusText("")
 export:SetLayout("Flow")
 export:SetTitle(L["Export"])
@@ -1250,7 +1252,7 @@ OmniBar.export = export
 -- Import
 local import = AceGUI:Create("Frame")
 import:SetWidth(550)
-import:EnableResize(false)
+if import.EnableResize then import:EnableResize(false) end
 import:SetStatusText("")
 import:SetLayout("Flow")
 import:SetTitle(L["Import"])
