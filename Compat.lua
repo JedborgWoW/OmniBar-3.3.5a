@@ -205,11 +205,30 @@ do
 	end
 
 	-- GameTooltip:SetSpellByID was added in 4.0; emulate via SetHyperlink.
+	--
+	-- #132 ACCESS_VIOLATION: on 3.3.5a a SetHyperlink("spell:<id>") for a spell
+	-- id that does not exist on the core crashes the client natively (not a Lua
+	-- error). OmniBar feeds this with ids from its own data, some of which are
+	-- not present in WotLK. Always validate with GetSpellInfo first and bail out
+	-- silently when the spell is unknown, so we never hand a bad id to the core.
 	if GameTooltip and not GameTooltip.SetSpellByID then
 		local meta = getmetatable(GameTooltip)
 		local target = (meta and meta.__index) or GameTooltip
 		target.SetSpellByID = function(self, spellID)
-			if spellID then self:SetHyperlink("spell:" .. spellID) end
+			if not spellID or not GetSpellInfo(spellID) then return end
+			return self:SetHyperlink("spell:" .. spellID)
+		end
+	end
+
+	-- Texture:SetColorTexture was added in Legion (7.0). On 3.3.5a the classic
+	-- SetTexture already accepts an (r, g, b[, a]) colour tuple, so map it across.
+	-- Nothing in OmniBar currently calls this, but the shim keeps the addon
+	-- portable if upstream code paths reach it.
+	local tex = UIParent:CreateTexture()
+	local texMeta = getmetatable(tex).__index
+	if texMeta and not texMeta.SetColorTexture then
+		function texMeta:SetColorTexture(r, g, b, a)
+			return self:SetTexture(r, g, b, a)
 		end
 	end
 end
