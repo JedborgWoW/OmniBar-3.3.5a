@@ -1,5 +1,16 @@
 # Changelog
 
+## [V34 - 3.3.5a Backport] — 2026-06-30
+- Icons now disappear when a tracked cooldown finishes (in both Test and live
+  play). 3.3.5a has no OnCooldownDone callback, so nothing retired completed
+  icons. Added a throttled OnUpdate on each bar that hides an icon's cooldown
+  once its stored finish time passes; that fires the cooldown's OnHide ->
+  OmniBar_CooldownFinish, which removes the icon (default) or dims it back to
+  the unused state (Show Unused Icons). Cooldown frames are now explicitly
+  shown while running so the swipe renders and Hide() yields a real OnHide.
+- Relabeled the addon: version "V34 - 3.3.5a Backport" and author
+  "Jordon (Backported by Jedborg)" in the options header and both .toc files.
+
 ## [3.3.5a-1] — 2026-06-29
 - Static 3.3.5a compliance audit (no code regressions found in Compat layer,
   combat-log parser, event registration, spec-detection guards, or spell database).

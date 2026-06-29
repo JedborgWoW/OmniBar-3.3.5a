@@ -573,6 +573,8 @@ function OmniBar:Initialize(key, name)
 	OmniBar_Center(f)
 
 	f.OnEvent = OmniBar_OnEvent
+	-- 3.3.5a has no cooldown-complete callback; poll to retire finished icons.
+	f:SetScript("OnUpdate", OmniBar_OnUpdate)
 
 	f:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
 	f:RegisterEvent("ZONE_CHANGED_NEW_AREA", "OnEvent")
@@ -1110,6 +1112,33 @@ function OmniBar_Refresh(self)
 	OmniBar_ReplaySpellCasts(self)
 end
 
+-- Retire icons whose cooldown has elapsed.
+--
+-- Retail fires the Cooldown frame's OnCooldownDone when a swipe completes, which
+-- OmniBar wires (via the cooldown's OnHide) to OmniBar_CooldownFinish to drop the
+-- icon. 3.3.5a has no such callback, so the cooldown swipe just finishes and the
+-- icon would linger forever. Poll the active icons here and, once an icon's stored
+-- finish time has passed, hide its cooldown — that fires OnHide ->
+-- OmniBar_CooldownFinish, which removes the icon (default) or dims it to the
+-- unused state (Show Unused Icons). Throttled; #active is small.
+function OmniBar_OnUpdate(self, elapsed)
+	self.sinceFinishCheck = (self.sinceFinishCheck or 0) + elapsed
+	if self.sinceFinishCheck < 0.1 then return end
+	self.sinceFinishCheck = 0
+	local active = self.active
+	if (not active) then return end
+	local now = GetTime()
+	-- Iterate backwards: OmniBar_CooldownFinish can remove the icon from active.
+	for i = #active, 1, -1 do
+		local icon = active[i]
+		local cooldown = icon and icon.cooldown
+		if cooldown and cooldown.finish and now >= cooldown.finish then
+			cooldown.finish = nil
+			cooldown:Hide()
+		end
+	end
+end
+
 function OmniBar_OnEvent(self, event, ...)
 	-- 3.3.5a fires the legacy roster events; normalize them to GROUP_ROSTER_UPDATE.
 	if event == "PARTY_MEMBERS_CHANGED" or event == "RAID_ROSTER_UPDATE" then
@@ -1519,6 +1548,10 @@ function OmniBar_StartCooldown(self, icon, start)
 	icon.cooldown:SetCooldown(start, icon.duration)
 	icon.cooldown.finish = start + icon.duration
 	icon.cooldown:SetSwipeColor(0, 0, 0, self.settings.swipeAlpha or 0.65)
+	-- 3.3.5a: show the cooldown frame while it runs so that hiding it on
+	-- completion (OmniBar_OnUpdate) produces a real OnHide transition, which is
+	-- what drives OmniBar_CooldownFinish. There is no OnCooldownDone here.
+	icon.cooldown:Show()
 	icon:SetAlpha(1)
 end
 

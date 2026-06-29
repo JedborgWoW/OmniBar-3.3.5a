@@ -100,6 +100,21 @@ Blood, Unbreakable Armor, Rune Tap, Mark of Blood, Hysteria(49016), Raise Ally, 
   `CLASS_ORDER[0]` is nil, so the old form could throw `compare nil with number` when
   `showUnused` is on and a classless icon is active.
 
+## Cooldown completion (3.3.5a has no OnCooldownDone)
+Retail fires the Cooldown frame's `OnCooldownDone` when a swipe completes, which
+OmniBar wires (via the cooldown's `<OnHide>`) to `OmniBar_CooldownFinish` to drop
+the finished icon. **3.3.5a has no such callback** — the swipe just ends and the
+icon would linger forever (nothing else calls `cooldown:Hide()` except a full
+`OmniBar_ResetIcons`). Fix: `OmniBar_OnUpdate` (a throttled `OnUpdate` set on every
+bar frame in the bar-creation block) polls `self.active` and, once an icon's
+`cooldown.finish` (set in `OmniBar_StartCooldown`) has passed, hides the cooldown —
+that produces the `OnHide` transition that runs `OmniBar_CooldownFinish` (removes
+the icon in default mode, dims it to unused in Show-Unused mode). `OmniBar_StartCooldown`
+now also `cooldown:Show()`s the frame so the swipe renders AND so the later `Hide()`
+is a real visible->hidden transition (otherwise OnHide never fires). Do NOT move this
+auto-hide into the Compat `SetCooldown` shim — that metatable is shared by every
+Cooldown in the UI and would make unrelated cooldowns hide themselves.
+
 ## awesome_wotlk.dll
 Not used. OmniBar needs no nameplate / `C_NamePlate` / native-token features, so
 there is nothing the DLL would improve here. No code path calls DLL-specific
