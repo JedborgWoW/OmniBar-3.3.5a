@@ -149,14 +149,28 @@ if not GetNumGroupMembers then
 	end
 end
 
+-- Party categories were added in Cataclysm. 3.3.5a has no instance/home party
+-- category, so define the constants and treat the *categorized* form of
+-- IsInRaid/IsInGroup as always-false below. Without this, OmniBar's
+-- GetDefaultCommChannel does `IsInRaid(LE_PARTY_CATEGORY_INSTANCE)` which, with a
+-- nil constant and an arg-ignoring shim, returned true in any group and resolved
+-- the comm channel to "INSTANCE_CHAT" — a distribution that does not exist on
+-- 3.3.5a, breaking the "Track Multiple Players" sync (SendAddonMessage rejects it).
+LE_PARTY_CATEGORY_HOME     = LE_PARTY_CATEGORY_HOME or 1
+LE_PARTY_CATEGORY_INSTANCE = LE_PARTY_CATEGORY_INSTANCE or 2
+
 if not IsInRaid then
-	function IsInRaid()
+	function IsInRaid(category)
+		-- No party categories on 3.3.5a → the categorized form is always false,
+		-- so "INSTANCE_CHAT" branches fall through to the real RAID channel.
+		if category ~= nil then return false end
 		return (GetNumRaidMembers and GetNumRaidMembers() or 0) > 0
 	end
 end
 
 if not IsInGroup then
-	function IsInGroup()
+	function IsInGroup(category)
+		if category ~= nil then return false end
 		return ((GetNumPartyMembers and GetNumPartyMembers() or 0) > 0)
 			or ((GetNumRaidMembers and GetNumRaidMembers() or 0) > 0)
 	end

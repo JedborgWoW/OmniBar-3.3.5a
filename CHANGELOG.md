@@ -1,6 +1,11 @@
 # Changelog
 
 ## [V34 - 3.3.5a Backport] — 2026-06-30
+- Fixed the "Track Multiple Players" group sync in party/raid. On 3.3.5a the
+  comm channel resolved to "INSTANCE_CHAT" (a distribution that does not exist
+  before MoP), so SendAddonMessage rejected every sync message. The Compat layer
+  now defines LE_PARTY_CATEGORY_* and makes the categorized IsInRaid/IsInGroup
+  form return false, so the channel correctly resolves to PARTY/RAID.
 - Icons now disappear when a tracked cooldown finishes (in both Test and live
   play). 3.3.5a has no OnCooldownDone callback, so nothing retired completed
   icons. Added a throttled OnUpdate on each bar that hides an icon's cooldown

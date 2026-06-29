@@ -100,6 +100,17 @@ Blood, Unbreakable Armor, Rune Tap, Mark of Blood, Hysteria(49016), Raise Ally, 
   `CLASS_ORDER[0]` is nil, so the old form could throw `compare nil with number` when
   `showUnused` is on and a classless icon is active.
 
+## Group sync comm channel (no "INSTANCE_CHAT" on 3.3.5a)
+`GetDefaultCommChannel` (OmniBar.lua) used retail's `IsInRaid(LE_PARTY_CATEGORY_INSTANCE)`
+to pick "INSTANCE_CHAT". On 3.3.5a that constant is nil and the old arg-ignoring
+`IsInRaid`/`IsInGroup` shims returned true in any group, so the channel became
+"INSTANCE_CHAT" — a distribution added in MoP that `SendAddonMessage` rejects here,
+silently breaking the "Track Multiple Players" sync in any party/raid. Fix lives in
+`Compat.lua`: define `LE_PARTY_CATEGORY_HOME/INSTANCE` and make the *categorized*
+`IsInRaid(cat)`/`IsInGroup(cat)` form return false (3.3.5a has no party categories),
+so the channel falls through to PARTY/RAID. (Version broadcast via SendVersion stays
+off because the "V34…" version string has no lowercase-v match → `version.major == 0`.)
+
 ## Cooldown completion (3.3.5a has no OnCooldownDone)
 Retail fires the Cooldown frame's `OnCooldownDone` when a swipe completes, which
 OmniBar wires (via the cooldown's `<OnHide>`) to `OmniBar_CooldownFinish` to drop
