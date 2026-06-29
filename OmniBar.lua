@@ -86,9 +86,13 @@ for k, v in pairs(addon.Cooldowns) do
 	end
 end
 
+-- Icon grouping order. WotLK 3.3.5a only — the post-WotLK classes
+-- (Demon Hunter, Monk, Evoker) are intentionally absent so no post-Wrath
+-- class token is ever carried in loaded data. The lookup is guarded with
+-- `or 0` at the call site so a missing/nil class sorts alongside GENERAL
+-- instead of erroring on a nil compare.
 local CLASS_ORDER = {
 	["GENERAL"] = 0,
-	["DEMONHUNTER"] = 1,
 	["DEATHKNIGHT"] = 2,
 	["PALADIN"] = 3,
 	["WARRIOR"] = 4,
@@ -99,8 +103,6 @@ local CLASS_ORDER = {
 	["HUNTER"] = 9,
 	["MAGE"] = 10,
 	["ROGUE"] = 11,
-	["MONK"] = 12,
-	["EVOKER"] = 13,
 }
 
 local MAX_ARENA_SIZE = addon.MAX_ARENA_SIZE or 0
@@ -1707,7 +1709,7 @@ function OmniBar_Position(self)
 				if x < y then return true end
 				if x == y then return a.spellID < b.spellID end
 			end
-			return CLASS_ORDER[aClass] < CLASS_ORDER[bClass]
+			return (CLASS_ORDER[aClass] or 0) < (CLASS_ORDER[bClass] or 0)
 		end)
 	else
 		-- if we aren't showing unused, sort active icons based on user preference: time remaining or time added
